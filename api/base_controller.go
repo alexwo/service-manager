@@ -96,6 +96,12 @@ func (c *BaseController) Routes() []web.Route {
 	return []web.Route{
 		{
 			Endpoint: web.Endpoint{
+				Method: http.MethodOptions,
+				Path:   c.resourceBaseURL,
+			},
+		},
+		{
+			Endpoint: web.Endpoint{
 				Method: http.MethodPost,
 				Path:   c.resourceBaseURL,
 			},
