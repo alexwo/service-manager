@@ -1,11 +1,9 @@
 package filters
 
 import (
+	"github.com/Peripli/service-manager/pkg/env"
 	"github.com/Peripli/service-manager/pkg/web"
 	"net/http"
-	"strings"
-	"github.com/Peripli/service-manager/pkg/env"
-	"fmt"
 )
 
 // ResponseHeaderStripperFilter is a web.Filter used to strip headers from all OSB calls
@@ -21,37 +19,44 @@ func (f *CROSFilter) Name() string {
 	return "CROSFilter"
 }
 
+func resWrap(res *web.Response, err error, allowedUrl string) (*web.Response, error) {
+	res.Header.Add("Access-Control-Allow-Origin", allowedUrl)
+	return res, err
+}
+
 // Run implements web.Filter and represents the Response Header Stripper middleware function that
 // strips blacklisted headers
 func (f *CROSFilter) Run(request *web.Request, next web.Handler) (*web.Response, error) {
-
-	reqHost := request.Header.Get("host")
-	var webRes web.Response;
-	webRes.StatusCode = 405
-	if request.Method == "OPTIONS" {
-
-		allowedHosts := f.Environment.Get("cross.allowed_hosts")
-		fmt.Println("Came from hist %s", reqHost)
-		fmt.Println("allowedHost: %s", allowedHosts)
-		if allowedHosts != nil {
-			allowedHosts := allowedHosts.(string)
-			allowedHostsArray := strings.Split(allowedHosts, ",")
-
-			for _, allowedHost := range allowedHostsArray {
-				if strings.ContainsAny(allowedHost, reqHost) {
-					webRes.Header = http.Header{}
-					webRes.Header.Add("Access-Control-Allow-Origin", "*")
-					webRes.Header.Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-					webRes.Header.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-					webRes.StatusCode = 200
-					return &webRes, nil
-				}
-			}
-		}
-		return &webRes, nil
+	var allowedUrl string
+	reqHost := request.Header.Get("Origin")
+	allowedHost := f.Environment.Get("cross.allowed_host")
+	if allowedHost != nil {
+		allowedUrl = allowedHost.(string)
 	}
 
-	return &webRes, nil
+	var webRes web.Response
+	webRes.StatusCode = 405
+	webRes.Header = http.Header{}
+	if request.Method == "OPTIONS" {
+		if allowedHost == reqHost {
+			webRes.Header.Add("Access-Control-Allow-Origin", allowedUrl)
+			webRes.Header.Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+			webRes.Header.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			webRes.StatusCode = 200
+			return &webRes, nil
+		} else {
+			return &webRes, nil
+		}
+	} else if allowedHost == reqHost {
+		res, err := next.Handle(request)
+		if err == nil {
+			return resWrap(res, err, allowedUrl)
+		} else {
+			return res, err
+		}
+	}
+
+	return next.Handle(request)
 }
 
 // FilterMatchers implements the web.Filter interface and returns the conditions
@@ -61,7 +66,7 @@ func (f *CROSFilter) FilterMatchers() []web.FilterMatcher {
 		{
 			Matchers: []web.Matcher{
 				web.Path("*/**"),
-				web.Methods(http.MethodOptions),
+				web.Methods(http.MethodOptions, http.MethodGet, http.MethodPost),
 			},
 		},
 	}
