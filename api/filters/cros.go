@@ -60,7 +60,10 @@ func (f *CROSFilter) Run(request *web.Request, next web.Handler) (*web.Response,
 			httpError := util.ToHTTPError(request.Context(), err)
 			webRes.StatusCode = httpError.StatusCode
 			encoder := json.NewEncoder(stream)
-			encoder.Encode(httpError)
+			err := encoder.Encode(httpError)
+			if err != nil {
+				return &webRes, err
+			}
 			webRes.Body = stream.Bytes()
 			return &webRes, nil
 		}
