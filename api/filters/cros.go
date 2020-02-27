@@ -1,7 +1,10 @@
 package filters
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/Peripli/service-manager/pkg/env"
+	"github.com/Peripli/service-manager/pkg/util"
 	"github.com/Peripli/service-manager/pkg/web"
 	"net/http"
 )
@@ -35,14 +38,14 @@ func (f *CROSFilter) Run(request *web.Request, next web.Handler) (*web.Response,
 	}
 
 	var webRes web.Response
-	webRes.StatusCode = 405
+	webRes.StatusCode = 200
 	webRes.Header = http.Header{}
+	webRes.Header.Add("Access-Control-Allow-Origin", allowedUrl)
+
 	if request.Method == "OPTIONS" {
 		if allowedHost == reqHost {
-			webRes.Header.Add("Access-Control-Allow-Origin", allowedUrl)
 			webRes.Header.Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 			webRes.Header.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-			webRes.StatusCode = 200
 			return &webRes, nil
 		} else {
 			return &webRes, nil
@@ -52,7 +55,14 @@ func (f *CROSFilter) Run(request *web.Request, next web.Handler) (*web.Response,
 		if err == nil {
 			return resWrap(res, err, allowedUrl)
 		} else {
-			return res, err
+			stream := bytes.NewBufferString("")
+			webRes.Header.Add("Content-Type", "application/json")
+			httpError := util.ToHTTPError(request.Context(), err)
+			webRes.StatusCode = httpError.StatusCode
+			encoder := json.NewEncoder(stream)
+			encoder.Encode(httpError)
+			webRes.Body = stream.Bytes()
+			return &webRes, nil
 		}
 	}
 
