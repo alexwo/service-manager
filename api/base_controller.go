@@ -90,16 +90,29 @@ func NewAsyncController(ctx context.Context, options *Options, resourceBaseURL s
 
 	return controller
 }
-
 // Routes returns the common set of routes for all objects
 func (c *BaseController) Routes() []web.Route {
 	return []web.Route{
 		{
 			Endpoint: web.Endpoint{
 				Method: http.MethodOptions,
+				Path:   fmt.Sprintf("%s/{%s}", c.resourceBaseURL, web.PathParamResourceID),
+			},
+		},
+		{
+			Endpoint: web.Endpoint{
+				Method: http.MethodOptions,
+				Path:   fmt.Sprintf("%s/{%s}%s/{%s}", c.resourceBaseURL, web.PathParamResourceID, web.OperationsURL, web.PathParamID),
+			},
+		},
+
+		{
+			Endpoint: web.Endpoint{
+				Method: http.MethodOptions,
 				Path:   c.resourceBaseURL,
 			},
 		},
+
 		{
 			Endpoint: web.Endpoint{
 				Method: http.MethodPost,
@@ -116,21 +129,7 @@ func (c *BaseController) Routes() []web.Route {
 		},
 		{
 			Endpoint: web.Endpoint{
-				Method: http.MethodOptions,
-				Path:   fmt.Sprintf("%s/{%s}", c.resourceBaseURL, web.PathParamResourceID),
-			},
-			Handler: c.GetSingleObject,
-		},
-		{
-			Endpoint: web.Endpoint{
 				Method: http.MethodGet,
-				Path:   fmt.Sprintf("%s/{%s}%s/{%s}", c.resourceBaseURL, web.PathParamResourceID, web.OperationsURL, web.PathParamID),
-			},
-			Handler: c.GetOperation,
-		},
-		{
-			Endpoint: web.Endpoint{
-				Method: http.MethodOptions,
 				Path:   fmt.Sprintf("%s/{%s}%s/{%s}", c.resourceBaseURL, web.PathParamResourceID, web.OperationsURL, web.PathParamID),
 			},
 			Handler: c.GetOperation,

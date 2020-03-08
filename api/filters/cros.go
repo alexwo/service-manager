@@ -41,11 +41,10 @@ func (f *CROSFilter) Run(request *web.Request, next web.Handler) (*web.Response,
 	webRes.StatusCode = 200
 	webRes.Header = http.Header{}
 	webRes.Header.Add("Access-Control-Allow-Origin", allowedUrl)
-
 	if request.Method == "OPTIONS" {
 		if allowedHost == reqHost {
 			webRes.Header.Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-			webRes.Header.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			webRes.Header.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
 			return &webRes, nil
 		} else {
 			return &webRes, nil
