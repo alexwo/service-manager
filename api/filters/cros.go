@@ -78,7 +78,7 @@ func (f *CROSFilter) FilterMatchers() []web.FilterMatcher {
 		{
 			Matchers: []web.Matcher{
 				web.Path("*/**"),
-				web.Methods(http.MethodOptions, http.MethodGet, http.MethodPost),
+				web.Methods(http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete),
 			},
 		},
 	}
