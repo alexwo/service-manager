@@ -23,7 +23,10 @@ func (f *CROSFilter) Name() string {
 }
 
 func resWrap(res *web.Response, err error, allowedUrl string) (*web.Response, error) {
-	res.Header.Add("Access-Control-Allow-Origin", allowedUrl)
+	crosHeader := res.Header.Get("Access-Control-Allow-Origin")
+	if crosHeader!= "*"{
+		res.Header.Set("Access-Control-Allow-Origin", allowedUrl)
+	}
 	return res, err
 }
 
